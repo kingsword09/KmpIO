@@ -9,3 +9,4 @@
 *.iml
 local.properties
 /KmpIO/secring.gpg
+.DS_Store
