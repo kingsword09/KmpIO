@@ -225,6 +225,17 @@ interface ZipFileBase : Closeable {
     filter: (suspend (entry: ZipEntry) -> Boolean)? = null,
     mapPath: ((entry: ZipEntry) -> String)? = null
   ): List<File>
+
+  /**
+   * Extracts the content of the Zip file into the specified directory.
+   * @param directory must be a File instance where isDirectory is true.
+   * @param filter optional function returns true to extract file, false to skip
+   * @return List of File objects extracted.
+   */
+  suspend fun extractToDirectory(
+    directory: File,
+    filter: (suspend (entry: ZipEntry) -> Boolean)? = null
+  ): List<File>
 }
 
 /**
@@ -578,7 +589,7 @@ class ZipFile(
     filter: (suspend (entry: ZipEntry) -> Boolean)?,
     mapPath: ((entry: ZipEntry) -> String)?
   ): List<File> {
-    if (!directory.exists) {
+    if(!directory.exists) {
       directory.makeDirectory()
     }
 
@@ -596,12 +607,49 @@ class ZipFile(
           directory
         else
           directory.resolve(f.directoryPath)
+
+        if (!directory.exists) {
+          directory.makeDirectory()
+        }
+
         val copy = RawFile(File(d, f.name), FileMode.Write)
         readEntry(zipEntry) { _, bytes, _, _ ->
           copy.write(ByteBuffer(bytes))
         }
         copy.close()
         list.add(copy.file)
+      }
+      true
+    }
+    return list
+  }
+
+  override suspend fun extractToDirectory(
+    directory: File,
+    filter: (suspend (entry: ZipEntry) -> Boolean)?
+  ): List<File> {
+    if(!directory.exists) {
+      directory.makeDirectory()
+    }
+
+    val list = mutableListOf<File>()
+    useEntries { zipEntry ->
+      println("judge: ${zipEntry.name} ${filter?.invoke(zipEntry)}")
+      if (filter?.invoke(zipEntry) != false) {
+        val name = zipEntry.name
+        if(name.endsWith("/")) {
+          val dir = directory.resolve(name)
+          if(!dir.exists) {
+            dir.makeDirectory()
+          }
+        } else {
+          val copy = RawFile(File(directory, name), FileMode.Write)
+          readEntry(zipEntry) { _, bytes, _, _ ->
+            copy.write(ByteBuffer(bytes))
+          }
+          copy.close()
+          list.add(copy.file)
+        }
       }
       true
     }

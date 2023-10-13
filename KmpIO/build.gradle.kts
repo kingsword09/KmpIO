@@ -1,6 +1,6 @@
 plugins {
-    alias(libs.plugins.kotlinxMultiplatform)
-    alias(libs.plugins.androidLibrary)
+    kotlin("multiplatform")
+    id("com.android.library")
 }
 
 @OptIn(org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi::class)
@@ -10,14 +10,14 @@ kotlin {
     androidTarget {
         compilations.all {
             kotlinOptions {
-                jvmTarget = libs.versions.jvmTarget.get()
+                jvmTarget = "17"
             }
         }
     }
 
     jvm("desktop")
     jvmToolchain {
-        languageVersion.set(JavaLanguageVersion.of(libs.versions.jvmTarget.get()))
+        languageVersion.set(JavaLanguageVersion.of("17"))
     }
     
     listOf(
@@ -33,15 +33,14 @@ kotlin {
     sourceSets {
         val commonMain by getting {
             dependencies {
-                implementation(libs.kotlinx.datetime)
-                implementation(libs.kotlinx.atomicfu)
-                implementation(libs.kotlinx.coroutines.core)
+                implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.4.1")
+                implementation("org.jetbrains.kotlinx:atomicfu:0.22.0")
+                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3")
             }
         }
         val commonTest by getting {
             dependencies {
                 implementation(kotlin("test"))
-                implementation(libs.test.kotlin.coroutines.test)
             }
         }
         val iosX64Main by getting
